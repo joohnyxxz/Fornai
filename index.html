@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fornai</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="icon" href="logofornai.png" type="image/png">
+</head>
+<body>
+
+    <div id="loading-screen" class="screen active">
+        Carregando...
+    </div>
+
+    <div id="main-menu" class="screen">
+        <h1>Fornai</h1>
+        <button id="start-button">Iniciar Jogo</button>
+        <button id="how-to-play-button">Como Jogar</button>
+        <button id="settings-button">Configurações</button>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <canvas id="game-canvas"></canvas>
+
+        <div id="hud">
+            <div id="health">
+                <span id="health-text">1000/1000</span>
+                <div id="health-bar-container">
+                    <div id="health-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="top-right-hud">
+            <div class="hud-box">
+                <span id="zone-timer">02:00</span>
+            </div>
+            <div class="hud-box">
+                Jogadores: <span id="players-left">100</span>
+            </div>
+        </div>
+
+        <div id="minimap-container">
+            <canvas id="minimap-canvas"></canvas>
+        </div>
+
+        <div id="drop-phase-overlay" class="active">
+            Pressione ESPAÇO para Pousar!
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <h2 id="game-over-title"></h2>
+        <button id="restart-button">Voltar ao Menu</button>
+    </div>
+
+    <div id="how-to-play-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Como Jogar</h2>
+            <p><strong>WASD / Setas:</strong> Mover e girar a câmera.</p>
+            <p><strong>Clique do mouse:</strong> Atirar.</p>
+            <p>Sobreviva a todos os inimigos e evite a zona segura que encolhe!</p>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Configurações</h2>
+            <p>Nenhuma configuração disponível no momento.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

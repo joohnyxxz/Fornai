@@ -1,0 +1,250 @@
+/* Adicionando um fundo mais vibrante e uma fonte "gamer" */
+body {
+    margin: 0;
+    font-family: 'Press Start 2P', cursive;
+    background-color: #55c4ff; /* Céu azul claro */
+    color: #f1f1f1;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Telas do jogo (menu, game over) */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    background-color: transparent;
+}
+
+.screen.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Sol no topo, com mais brilho */
+.sun {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px; /* Maior */
+    height: 200px;
+    background: radial-gradient(circle, #ffeb3b, #ff9800);
+    border-radius: 50%;
+    box-shadow: 0 0 80px 20px #ffeb3b; /* Brilho mais forte */
+    z-index: 1;
+}
+
+/* Texto de carregamento e menus */
+#loading-screen {
+    font-size: 2.5em;
+    text-shadow: 4px 4px #000;
+}
+
+#main-menu, #game-over-screen {
+    text-align: center;
+    z-index: 2;
+}
+
+#main-menu h1 {
+    font-size: 5em; /* Título maior */
+    margin-bottom: 25px;
+    text-shadow: 6px 6px #000;
+    color: #ffd700; /* Dourado */
+}
+
+#game-over-screen h2 {
+    font-size: 4em;
+    text-shadow: 6px 6px #000;
+}
+
+/* Botões com estilo cartunesco */
+button {
+    background-color: #00bfff; /* Azul claro e vibrante */
+    color: white;
+    border: 3px solid #005f79;
+    padding: 18px 35px; /* Maior */
+    margin: 15px;
+    font-size: 1.4em; /* Fonte maior */
+    cursor: pointer;
+    border-radius: 12px; /* Mais arredondado */
+    transition: background-color 0.3s, transform 0.1s;
+    box-shadow: 0 8px #005f79; /* Sombra mais destacada */
+}
+
+button:hover {
+    background-color: #0099e6;
+    transform: translateY(-4px);
+    box-shadow: 0 12px #003340;
+}
+
+button:active {
+    transform: translateY(2px);
+    box-shadow: 0 4px #003340;
+}
+
+/* Canvas do jogo */
+canvas {
+    display: block;
+    background-color: #8bc34a; /* Chão verde (grama) */
+    z-index: 0;
+}
+
+/* HUD - Barra de Vida */
+#hud {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    color: white;
+    font-size: 1.4em;
+    text-shadow: 2px 2px #000;
+    font-family: 'Press Start 2P', cursive;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+#health {
+    font-size: 1.8em;
+    display: flex;
+    align-items: center;
+}
+
+#health-text {
+    margin-right: 15px;
+    min-width: 100px;
+    text-align: right;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+#health-bar-container {
+    width: 300px; /* Barra de vida mais longa */
+    height: 30px; /* Barra de vida mais alta */
+    background-color: #333;
+    border: 3px solid white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 15px #000000;
+}
+
+#health-bar {
+    height: 100%;
+    background-color: #4CAF50;
+    width: 100%;
+    transition: width 0.3s, background-color 0.3s;
+}
+
+/* HUD - Canto superior direito (Tempo e Players) */
+#top-right-hud {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    font-family: 'Press Start 2P', cursive;
+    text-shadow: 2px 2px #000;
+}
+
+.hud-box {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-size: 1.5em;
+    white-space: nowrap;
+}
+
+/* Mini-mapa */
+#minimap-container {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+    width: 200px;
+    height: 200px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 2px solid white;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+#minimap-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+#drop-phase-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5em;
+    color: white;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s;
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Modais */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #2c2c2c;
+    margin: 10% auto; /* Move o modal um pouco mais para cima */
+    padding: 30px; /* Mais padding */
+    border: 4px solid #888;
+    width: 85%;
+    max-width: 600px;
+    border-radius: 15px; /* Mais arredondado */
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 20px #000;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
