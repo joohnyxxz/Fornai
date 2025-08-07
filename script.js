@@ -31,31 +31,20 @@ window.onload = () => {
     // --- CONFIGURAÇÕES DO JOGO ---
     const MAP_WIDTH = 3000;
     const MAP_HEIGHT = 3000;
-    const BOT_COUNT = 199; // Aumentado para 99 bots
+    const BOT_COUNT = 99; // <--- Mude este número para alterar a quantidade de bots
     const ITEM_COUNT = 50;
     const MINIMAP_SIZE = 200;
 
-    // --- SHITPOST IMAGES ---
+    // --- SHITPOST IMAGES (COLOQUE SEUS PRÓPRIOS LINKS AQUI!) ---
     const shitpostImages = [
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPTq8Z-NiOyGeZsEQwCjV9rj5dbTw1GOUbcw&s',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUGDggrQUOSRTm7oEf1QLwA19DM2eJ0NvkqTNJRpdIllHHlhjjN6QVu0XnwvZRv9b3rhI&usqp=CAU',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRAi5t-RHbMCW5e1Xom-V8ZWTr6XzTiq983ew&s',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfUDdxk3eSYl5ZQeu9yCCvO96lNJpOGx3k2g&s',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2yCNXXVcxbf4yhRTG-6Fl2vJlFb-lU-Qmug&s',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcj6PeVGl5hFFtVCphdtZQy-4_yTUAFv1OiQ&s',
-        'https://pbs.twimg.com/media/FTIuycrUYBIq6KM.jpg',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ51tWVry1-AtHuy6AP1dibAeALE2a62v02mg&s',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTa6PxwnIxZfu___pvXltD-jOr4TmCLFs9gUw&s',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_u2kk4HI-4WgIBobS5vXtWxrLU7s89qfh3Q&s',
-        'https://ih1.redbubble.net/image.5285919449.9116/st,large,507x507-pad,600x600,f8f8f8.jpg',
-        'https://pbs.twimg.com/media/Fu2at_0XgAAmkDD.jpg',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRNEsWgsg9VShDNLCWMQbI45ymRPOTcifjaIg&s',
-        'https://rvideos2.memedroid.com/videos/UPLOADED642/63d401928c0e0.webp',
-        'https://media.tenor.com/PJ1Znvdi9YwAAAAe/ja-pode-gosar.png',
-        'https://media.tenor.com/XqjQbS_md1UAAAAe/paia-peixe-boi.png',
-        'https://preview.redd.it/day-5-of-shitposting-until-the-fnaf-movie-is-out-v0-4red6ma8r2wb1.jpeg?width=750&format=pjpg&auto=webp&s=ea0a7882898562ec1aa367bad76f55cb577e6353',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjBoeA-Q8pWwJztCSPL8E3oiUwjYsnNSFzCQ&s',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMXdK24ZrJLmWxEgRu7UYI2Wmvo8XjXyu-kA&s'
+        'https://i.imgur.com/K12t3pG.jpeg',
+        'https://i.imgur.com/W2o72kH.jpeg',
+        'https://i.imgur.com/s6wE5fO.jpeg',
+        'https://i.imgur.com/gK3X7zK.jpeg',
+        'https://i.imgur.com/Z4qFf4x.jpeg',
+        'https://i.imgur.com/eB3d3tL.jpeg',
+        'https://i.imgur.com/uR1k3xX.jpeg',
+        'https://i.imgur.com/sB3v1uX.jpeg'
     ];
 
     let player, bots, projectiles, items, safeZone;
@@ -87,8 +76,9 @@ window.onload = () => {
 
     class Player extends Entity {
         constructor(x, y) {
-            super(x, y, 20, '#000000', 1000); // Vida ajustada para 1000
-            this.isDropping = true;
+            // O último número é a vida do jogador. Mude para o valor desejado.
+            super(x, y, 20, '#000000', 1000); 
+            this.isDropping = false;
             this.dropSpeed = 5;
             this.rotation = 0; // Novo: Rotação da câmera
             this.fov = Math.PI / 3; // Field of View (60 graus)
@@ -130,7 +120,8 @@ window.onload = () => {
 
     class Bot extends Entity {
         constructor(x, y) {
-            super(x, y, 20, '#e74c3c', 75); // Vida dos bots ajustada para 75
+            // Mude o '75' para a vida que você quer para os bots
+            super(x, y, 20, '#e74c3c', 75); 
             this.color = '#' + Math.floor(Math.random() * 16777215).toString(16);
             this.target = null;
             this.moveTimer = 0;
@@ -157,8 +148,12 @@ window.onload = () => {
             this.moveTimer -= 1;
             this.shootCooldown -= 1;
 
-            if (this.target !== player || this.moveTimer <= 0) {
-                this.target = player;
+            // Filtra todos os bots e o jogador, removendo o próprio bot da lista de alvos
+            const potentialTargets = entities.filter(e => e.isAlive() && e !== this);
+
+            if (potentialTargets.length > 0 && (this.target === null || !this.target.isAlive() || this.moveTimer <= 0)) {
+                // Escolhe um alvo aleatório entre os alvos potenciais
+                this.target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
                 this.moveTimer = Math.random() * 200 + 100;
             }
 
@@ -169,7 +164,7 @@ window.onload = () => {
 
                 let avoidDx = 0;
                 let avoidDy = 0;
-                entities.filter(e => e !== this && e !== player).forEach(otherBot => {
+                entities.filter(e => e !== this).forEach(otherBot => {
                     const d = Math.hypot(otherBot.x - this.x, otherBot.y - this.y);
                     if (d < 50) {
                         avoidDx += (this.x - otherBot.x) / d;
