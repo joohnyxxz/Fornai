@@ -29,9 +29,9 @@ window.onload = () => {
     const gameOverTitle = document.getElementById('game-over-title');
 
     // --- CONFIGURAÇÕES DO JOGO ---
-    const MAP_WIDTH = 3000;
-    const MAP_HEIGHT = 3000;
-    const BOT_COUNT = 199; // Aumentado para 99 bots
+    const MAP_WIDTH = 1500;
+    const MAP_HEIGHT = 1500;
+    const BOT_COUNT = 249; // Aumentado para 99 bots
     const ITEM_COUNT = 50;
     const MINIMAP_SIZE = 200;
 
