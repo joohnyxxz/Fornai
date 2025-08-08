@@ -342,15 +342,6 @@ window.onload = () => {
                     return;
                 }
             }
-
-            bots.forEach((bot, botIndex) => {
-                if (bot.isAlive() && proj.owner !== bot) {
-                    if (Math.hypot(proj.x - bot.x, proj.y - bot.y) < bot.size + proj.size) {
-                        bot.takeDamage(10);
-                        projectiles.splice(projIndex, 1);
-                    }
-                }
-            });
         });
 
         bots = bots.filter(bot => bot.isAlive());
