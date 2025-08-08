@@ -35,7 +35,7 @@ window.onload = () => {
     const ITEM_COUNT = 50;
     const MINIMAP_SIZE = 200;
 
-    // --- SHITPOST IMAGES ---
+    // --- SHITPOST IMAGES (COLOQUE SEUS PRÓPRIOS LINKS AQUI!) ---
     const shitpostImages = [
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPTq8Z-NiOyGeZsEQwCjV9rj5dbTw1GOUbcw&s',
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUGDggrQUOSRTm7oEf1QLwA19DM2eJ0NvkqTNJRpdIllHHlhjjN6QVu0XnwvZRv9b3rhI&usqp=CAU',
@@ -87,7 +87,7 @@ window.onload = () => {
 
     class Player extends Entity {
         constructor(x, y) {
-            super(x, y, 20, '#000000', 1000); // Vida ajustada para 1000
+            super(x, y, 20, '#000000', 2000); // Vida ajustada para 1000
             this.isDropping = true;
             this.dropSpeed = 5;
             this.rotation = 0; // Novo: Rotação da câmera
@@ -169,7 +169,7 @@ window.onload = () => {
 
                 let avoidDx = 0;
                 let avoidDy = 0;
-                entities.filter(e => e !== this && e !== player).forEach(otherBot => {
+                entities.filter(e => e !== this).forEach(otherBot => {
                     const d = Math.hypot(otherBot.x - this.x, otherBot.y - this.y);
                     if (d < 50) {
                         avoidDx += (this.x - otherBot.x) / d;
