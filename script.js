@@ -55,7 +55,8 @@ window.onload = () => {
         'https://media.tenor.com/XqjQbS_md1UAAAAe/paia-peixe-boi.png',
         'https://preview.redd.it/day-5-of-shitposting-until-the-fnaf-movie-is-out-v0-4red6ma8r2wb1.jpeg?width=750&format=pjpg&auto=webp&s=ea0a7882898562ec1aa367bad76f55cb577e6353',
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjBoeA-Q8pWwJztCSPL8E3oiUwjYsnNSFzCQ&s',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMXdK24ZrJLmWxEgRu7UYI2Wmvo8XjXyu-kA&s'
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMXdK24ZrJLmWxEgRu7UYI2Wmvo8XjXyu-kA&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQLnNISSgXUh4vb7tKU3jc4coEg2YXawTkujQ&s'
     ];
 
     let player, bots, projectiles, items, safeZone;
