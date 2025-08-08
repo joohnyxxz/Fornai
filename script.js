@@ -29,8 +29,8 @@ window.onload = () => {
     const gameOverTitle = document.getElementById('game-over-title');
 
     // --- CONFIGURAÇÕES DO JOGO ---
-    const MAP_WIDTH = 2700;
-    const MAP_HEIGHT = 2700;
+    const MAP_WIDTH = 3000;
+    const MAP_HEIGHT = 3000;
     const BOT_COUNT = 99; // Aumentado para 99 bots
     const ITEM_COUNT = 50;
     const MINIMAP_SIZE = 200;
@@ -87,7 +87,7 @@ window.onload = () => {
 
     class Player extends Entity {
         constructor(x, y) {
-            super(x, y, 20, '#000000', 5000); // Vida ajustada para 1000
+            super(x, y, 20, '#000000', 5500); // Vida ajustada para 1000
             this.isDropping = true;
             this.dropSpeed = 5;
             this.rotation = 0; // Novo: Rotação da câmera
