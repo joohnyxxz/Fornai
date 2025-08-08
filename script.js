@@ -29,9 +29,9 @@ window.onload = () => {
     const gameOverTitle = document.getElementById('game-over-title');
 
     // --- CONFIGURAÇÕES DO JOGO ---
-    const MAP_WIDTH = 1500;
-    const MAP_HEIGHT = 1500;
-    const BOT_COUNT = 249; // Aumentado para 99 bots
+    const MAP_WIDTH = 2000;
+    const MAP_HEIGHT = 2000;
+    const BOT_COUNT = 99; // Aumentado para 99 bots
     const ITEM_COUNT = 50;
     const MINIMAP_SIZE = 200;
 
@@ -87,7 +87,7 @@ window.onload = () => {
 
     class Player extends Entity {
         constructor(x, y) {
-            super(x, y, 20, '#000000', 2000); // Vida ajustada para 1000
+            super(x, y, 20, '#000000', 5000); // Vida ajustada para 1000
             this.isDropping = true;
             this.dropSpeed = 5;
             this.rotation = 0; // Novo: Rotação da câmera
@@ -329,20 +329,34 @@ window.onload = () => {
         });
 
         projectiles.forEach((proj, projIndex) => {
-            proj.update();
-            if (proj.lifespan <= 0) {
+    proj.update();
+    
+    // Se o projétil saiu de cena ou o tempo de vida acabou, remova-o
+    if (proj.lifespan <= 0 || proj.x < 0 || proj.x > MAP_WIDTH || proj.y < 0 || proj.y > MAP_HEIGHT) {
+        projectiles.splice(projIndex, 1);
+        return;
+    }
+    
+    // Verifica a colisão de TIROS DE BOTS contra o JOGADOR
+    if (player.isAlive() && proj.owner !== player) {
+        if (Math.hypot(proj.x - player.x, proj.y - player.y) < player.size + proj.size) {
+            player.takeDamage(10);
+            projectiles.splice(projIndex, 1);
+            return;
+        }
+    }
+    
+    // Verifica a colisão de TIROS DO JOGADOR contra os BOTS
+    if (proj.owner === player) {
+        bots.forEach((bot, botIndex) => {
+            if (bot.isAlive() && Math.hypot(proj.x - bot.x, proj.y - bot.y) < bot.size + proj.size) {
+                bot.takeDamage(50); // Dano do jogador
                 projectiles.splice(projIndex, 1);
-                return;
-            }
-
-            if (player.isAlive() && proj.owner !== player) {
-                if (Math.hypot(proj.x - player.x, proj.y - player.y) < player.size + proj.size) {
-                    player.takeDamage(10);
-                    projectiles.splice(projIndex, 1);
-                    return;
-                }
+                // O return não funciona aqui, então usamos um 'splice' e continuamos o loop
             }
         });
+    }
+});
 
         bots = bots.filter(bot => bot.isAlive());
 
