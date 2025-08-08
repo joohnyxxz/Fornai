@@ -31,7 +31,7 @@ window.onload = () => {
     // --- CONFIGURAÇÕES DO JOGO ---
     const MAP_WIDTH = 2000;
     const MAP_HEIGHT = 2000;
-    const BOT_COUNT = 199; // Aumentado para 99 bots
+    const BOT_COUNT = 249; // Aumentado para 249 bots
     const ITEM_COUNT = 50;
     const MINIMAP_SIZE = 200;
 
@@ -157,11 +157,10 @@ window.onload = () => {
             this.moveTimer -= 1;
             this.shootCooldown -= 1;
 
-            const potentialTargets = entities.filter(e => e.isAlive() && e !== this);
-            if (potentialTargets.length > 0 && (this.target === null || !this.target.isAlive() || this.moveTimer <= 0)) {
-                this.target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
+            if (this.target !== player || this.moveTimer <= 0) {
+                this.target = player;
                 this.moveTimer = Math.random() * 200 + 100;
-}
+            }
 
             if (this.target) {
                 const dx = this.target.x - this.x;
