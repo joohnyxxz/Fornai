@@ -29,9 +29,9 @@ window.onload = () => {
     const gameOverTitle = document.getElementById('game-over-title');
 
     // --- CONFIGURAÇÕES DO JOGO ---
-    const MAP_WIDTH = 3000;
-    const MAP_HEIGHT = 3000;
-    const BOT_COUNT = 199; // Aumentado para 99 bots
+    const MAP_WIDTH = 6000;
+    const MAP_HEIGHT = 6000;
+    const BOT_COUNT = 299; // Aumentado para 99 bots
     const ITEM_COUNT = 50;
     const MINIMAP_SIZE = 200;
 
@@ -87,7 +87,7 @@ window.onload = () => {
 
     class Player extends Entity {
         constructor(x, y) {
-            super(x, y, 20, '#000000', 1000); // Vida ajustada para 1000
+            super(x, y, 20, '#000000', 2000); // Vida ajustada para 2000
             this.isDropping = true;
             this.dropSpeed = 5;
             this.rotation = 0; // Novo: Rotação da câmera
@@ -157,10 +157,13 @@ window.onload = () => {
             this.moveTimer -= 1;
             this.shootCooldown -= 1;
 
-            if (this.target !== player || this.moveTimer <= 0) {
-                this.target = player;
-                this.moveTimer = Math.random() * 200 + 100;
-            }
+            const potentialTargets = entities.filter(e => e.isAlive() && e !== this);
+
+            if (potentialTargets.length > 0 && (this.target === null || !this.target.isAlive() || this.moveTimer <= 0)) {
+            // Escolhe um alvo aleatório entre os alvos potenciais
+            this.target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
+            this.moveTimer = Math.random() * 200 + 100;
+        }
 
             if (this.target) {
                 const dx = this.target.x - this.x;
