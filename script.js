@@ -161,7 +161,7 @@ window.onload = () => {
             if (potentialTargets.length > 0 && (this.target === null || !this.target.isAlive() || this.moveTimer <= 0)) {
                 this.target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
                 this.moveTimer = Math.random() * 200 + 100;
-            }
+}
 
             if (this.target) {
                 const dx = this.target.x - this.x;
