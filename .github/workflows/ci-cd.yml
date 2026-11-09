@@ -19,15 +19,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Validar sintaxe do JavaScript
-        run: node --check script.js
+      - name: Validar sintaxe de todos os arquivos JavaScript
+        run: find src tests -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Validar HTML
         run: npx --yes htmlhint@1 index.html
       - name: Conferir arquivos referenciados no index.html
         run: |
-          for f in style.css script.js logofornai.png; do
+          for f in style.css src/main.js logofornai.png; do
             test -f "$f" || { echo "Faltando: $f"; exit 1; }
           done
+      - name: Rodar testes automáticos
+        run: npm test
 
   deploy:
     name: CD - Deploy no Render

@@ -1,9 +1,34 @@
-/* Adicionando um fundo mais vibrante e uma fonte "gamer" */
+/* ==========================================================
+   FORNAI - base visual "OG Daylight" (dia ensolarado, azul e amarelo)
+   O visual completo do HUD vem na parte 3; aqui fica o essencial.
+   ========================================================== */
+
+:root {
+    --navy: #0b1b3f;
+    --blue-900: #10275c;
+    --blue-600: #1f6feb;
+    --sky: #4fb3ff;
+    --yellow: #ffd60a;
+    --lime: #7ed321;
+    --storm: #7e34e2;
+    --white: #ffffff;
+
+    --font-display: 'Lilita One', 'Impact', sans-serif;
+    --font-body: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --skew: -8deg;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
-    font-family: 'Press Start 2P', cursive;
-    background-color: #55c4ff; /* Céu azul claro */
-    color: #f1f1f1;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-style: italic;
+    background: linear-gradient(180deg, #2a96ff 0%, #8fd3ff 60%, #d4f0ff 100%);
+    color: var(--white);
     overflow: hidden;
     display: flex;
     justify-content: center;
@@ -11,7 +36,7 @@ body {
     height: 100vh;
 }
 
-/* Telas do jogo (menu, game over) */
+/* ---------- Telas ---------- */
 .screen {
     position: absolute;
     top: 0;
@@ -25,7 +50,6 @@ body {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.5s ease;
-    background-color: transparent;
 }
 
 .screen.active {
@@ -33,155 +57,195 @@ body {
     pointer-events: auto;
 }
 
-/* Sol no topo, com mais brilho */
-.sun {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px; /* Maior */
-    height: 200px;
-    background: radial-gradient(circle, #ffeb3b, #ff9800);
-    border-radius: 50%;
-    box-shadow: 0 0 80px 20px #ffeb3b; /* Brilho mais forte */
-    z-index: 1;
-}
-
-/* Texto de carregamento e menus */
 #loading-screen {
-    font-size: 2.5em;
-    text-shadow: 4px 4px #000;
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: 400;
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+    text-shadow: 3px 3px 0 var(--navy);
 }
 
-#main-menu, #game-over-screen {
+#main-menu,
+#game-over-screen {
     text-align: center;
     z-index: 2;
 }
 
 #main-menu h1 {
-    font-size: 5em; /* Título maior */
-    margin-bottom: 25px;
-    text-shadow: 6px 6px #000;
-    color: #ffd700; /* Dourado */
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: 400;
+    font-size: clamp(3.2rem, 14vw, 6rem);
+    margin: 0 0 24px;
+    color: var(--yellow);
+    transform: skewX(var(--skew));
+    -webkit-text-stroke: 4px var(--navy);
+    paint-order: stroke fill;
+    text-shadow: 6px 6px 0 var(--navy);
 }
 
-#game-over-screen h2 {
-    font-size: 4em;
-    text-shadow: 6px 6px #000;
-}
-
-/* Botões com estilo cartunesco */
+/* ---------- Botões ---------- */
 button {
-    background-color: #00bfff; /* Azul claro e vibrante */
-    color: white;
-    border: 3px solid #005f79;
-    padding: 18px 35px; /* Maior */
-    margin: 15px;
-    font-size: 1.4em; /* Fonte maior */
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-style: normal;
+    background: linear-gradient(180deg, #5fc0ff, var(--blue-600));
+    color: var(--white);
+    border: 4px solid var(--navy);
+    padding: 14px 34px;
+    margin: 10px;
+    font-size: clamp(1.05rem, 3.6vw, 1.5rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
     cursor: pointer;
-    border-radius: 12px; /* Mais arredondado */
-    transition: background-color 0.3s, transform 0.1s;
-    box-shadow: 0 8px #005f79; /* Sombra mais destacada */
+    border-radius: 6px;
+    transform: skewX(var(--skew));
+    text-shadow: 2px 2px 0 var(--navy);
+    box-shadow: 0 7px 0 var(--navy), inset 0 3px 0 rgba(255, 255, 255, 0.45);
+    transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
+    min-height: 48px;
 }
 
 button:hover {
-    background-color: #0099e6;
-    transform: translateY(-4px);
-    box-shadow: 0 12px #003340;
+    filter: brightness(1.1);
+    transform: skewX(var(--skew)) translateY(-3px);
 }
 
 button:active {
-    transform: translateY(2px);
-    box-shadow: 0 4px #003340;
+    transform: skewX(var(--skew)) translateY(4px);
+    box-shadow: 0 3px 0 var(--navy), inset 0 3px 0 rgba(255, 255, 255, 0.45);
 }
 
-/* Canvas do jogo */
+button:focus-visible {
+    outline: 4px solid var(--yellow);
+    outline-offset: 4px;
+}
+
+#start-button {
+    background: linear-gradient(180deg, #ffe45c, #ffb000);
+    color: var(--navy);
+    text-shadow: none;
+}
+
 canvas {
     display: block;
-    background-color: #8bc34a; /* Chão verde (grama) */
-    z-index: 0;
 }
 
-/* HUD - Barra de Vida */
+/* ---------- HUD (versão inicial) ---------- */
+.hud-label {
+    font-size: 0.95rem;
+    letter-spacing: 1.5px;
+    color: #9fd4ff;
+    text-shadow: 1px 1px 0 var(--navy);
+}
+
 #hud {
     position: absolute;
-    top: 25px;
-    left: 25px;
-    color: white;
-    font-size: 1.4em;
-    text-shadow: 2px 2px #000;
-    font-family: 'Press Start 2P', cursive;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
+    top: clamp(10px, 2.5vh, 24px);
+    left: clamp(10px, 2.5vw, 24px);
+    pointer-events: none;
 }
 
 #health {
-    font-size: 1.8em;
     display: flex;
-    align-items: center;
-}
-
-#health-text {
-    margin-right: 15px;
-    min-width: 100px;
-    text-align: right;
-    background-color: rgba(0, 0, 0, 0.4);
-    padding: 5px;
-    border-radius: 5px;
+    flex-direction: column;
+    gap: 3px;
 }
 
 #health-bar-container {
-    width: 300px; /* Barra de vida mais longa */
-    height: 30px; /* Barra de vida mais alta */
-    background-color: #333;
-    border: 3px solid white;
-    border-radius: 8px;
+    position: relative;
+    width: clamp(170px, 32vw, 320px);
+    height: clamp(28px, 5vh, 38px);
+    background: rgba(11, 27, 63, 0.85);
+    border: 3px solid var(--white);
+    border-radius: 5px;
     overflow: hidden;
-    box-shadow: 0 0 15px #000000;
+    transform: skewX(var(--skew));
+    box-shadow: 0 4px 0 var(--navy);
 }
 
 #health-bar {
     height: 100%;
-    background-color: #4CAF50;
     width: 100%;
-    transition: width 0.3s, background-color 0.3s;
+    background: linear-gradient(180deg, #b5f060, var(--lime));
+    transition: width 0.2s ease-out;
 }
 
-/* HUD - Canto superior direito (Tempo e Players) */
+#health-bar[data-level="mid"] {
+    background: linear-gradient(180deg, #ffe45c, #ffb000);
+}
+
+#health-bar[data-level="low"] {
+    background: linear-gradient(180deg, #ff8a8a, #e53935);
+}
+
+#health-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: skewX(calc(var(--skew) * -1));
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: 400;
+    font-size: clamp(0.95rem, 2.6vw, 1.25rem);
+    -webkit-text-stroke: 3px var(--navy);
+    paint-order: stroke fill;
+}
+
 #top-right-hud {
     position: absolute;
-    top: 25px;
-    right: 25px;
+    top: clamp(10px, 2.5vh, 24px);
+    right: clamp(10px, 2.5vw, 24px);
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
-    font-family: 'Press Start 2P', cursive;
-    text-shadow: 2px 2px #000;
+    pointer-events: none;
 }
 
 .hud-box {
-    background-color: rgba(0, 0, 0, 0.5);
-    color: white;
-    padding: 10px 15px;
-    border-radius: 10px;
-    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(11, 27, 63, 0.82);
+    padding: 5px 14px 7px;
+    border: 3px solid var(--white);
+    border-radius: 5px;
+    transform: skewX(var(--skew));
+    box-shadow: 0 4px 0 var(--navy);
     white-space: nowrap;
+    font-size: clamp(1rem, 2.8vw, 1.4rem);
 }
 
-/* Mini-mapa */
+.hud-box > * {
+    transform: skewX(calc(var(--skew) * -1));
+}
+
+#zone-timer {
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: 400;
+    min-width: 3.2ch;
+    text-align: right;
+}
+
+#zone-arrow {
+    transition: transform 0.1s linear;
+}
+
 #minimap-container {
     position: absolute;
-    bottom: 25px;
-    right: 25px;
-    width: 200px;
-    height: 200px;
-    background-color: rgba(0, 0, 0, 0.6);
-    border: 2px solid white;
-    border-radius: 15px;
+    bottom: clamp(10px, 2.5vh, 24px);
+    right: clamp(10px, 2.5vw, 24px);
+    width: clamp(120px, 24vw, 200px);
+    height: clamp(120px, 24vw, 200px);
+    border: 4px solid var(--white);
+    border-radius: 8px;
     overflow: hidden;
+    box-shadow: 0 5px 0 var(--navy);
+    pointer-events: none;
 }
 
 #minimap-canvas {
@@ -189,26 +253,49 @@ canvas {
     height: 100%;
 }
 
-#drop-phase-overlay {
+/* Vinheta roxa quando está fora da zona segura */
+#storm-vignette {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2.5em;
-    color: white;
-    text-align: center;
+    inset: 0;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.5s;
-    font-family: 'Press Start 2P', cursive;
+    background: radial-gradient(ellipse at center, rgba(126, 52, 226, 0) 40%, rgba(126, 52, 226, 0.65) 100%);
 }
 
-/* Modais */
+#game-screen.in-storm #storm-vignette {
+    animation: storm-pulse 1s ease-in-out infinite;
+}
+
+@keyframes storm-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* ---------- Fim de jogo ---------- */
+#game-over-screen {
+    background: rgba(11, 27, 63, 0.88);
+    padding: 0 16px;
+}
+
+#game-over-title {
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: 400;
+    font-size: clamp(2.4rem, 10vw, 5rem);
+    margin: 0;
+    color: #ff6b8a;
+    transform: skewX(var(--skew));
+    -webkit-text-stroke: 4px var(--navy);
+    paint-order: stroke fill;
+    text-shadow: 6px 6px 0 var(--navy);
+}
+
+#game-over-subtitle {
+    font-size: clamp(1.1rem, 4vw, 1.6rem);
+    margin: 14px 0 24px;
+}
+
+/* ---------- Modais ---------- */
 .modal {
     display: none;
     position: fixed;
@@ -218,33 +305,46 @@ canvas {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.8);
+    background: rgba(11, 27, 63, 0.8);
 }
 
 .modal-content {
-    background-color: #2c2c2c;
-    margin: 10% auto; /* Move o modal um pouco mais para cima */
-    padding: 30px; /* Mais padding */
-    border: 4px solid #888;
+    background: linear-gradient(180deg, #2d63c8, var(--blue-900));
+    margin: 10% auto;
+    padding: 24px;
+    border: 4px solid var(--white);
     width: 85%;
     max-width: 600px;
-    border-radius: 15px; /* Mais arredondado */
+    border-radius: 8px;
     text-align: center;
     position: relative;
-    box-shadow: 0 0 20px #000;
+    font-size: clamp(1.1rem, 3.6vw, 1.4rem);
+    box-shadow: 0 7px 0 var(--navy);
+}
+
+.modal-content h2 {
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: 400;
+    color: var(--yellow);
+    text-shadow: 3px 3px 0 var(--navy);
 }
 
 .close-button {
-    color: #aaa;
     float: right;
-    font-size: 32px;
-    font-weight: bold;
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1;
     cursor: pointer;
 }
 
-.close-button:hover,
-.close-button:focus {
-    color: #fff;
-    text-decoration: none;
-    cursor: pointer;
+.close-button:hover {
+    color: var(--yellow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #game-screen.in-storm #storm-vignette {
+        animation: none;
+        opacity: 0.7;
+    }
 }

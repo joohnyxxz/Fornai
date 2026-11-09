@@ -1,0 +1,11 @@
+{
+  "name": "fornai",
+  "version": "1.0.0",
+  "description": "Fornai - jogo de battle royale no navegador",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
