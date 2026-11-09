@@ -5,9 +5,10 @@ import { CONFIG } from '../src/config.js';
 
 const emptyWorld = { obstacles: [], segments: [], circles: [] };
 
-function fakeInput(keys = [], look = 0) {
+// entrada falsa: teclas apertadas e movimento do mouse (em pixels) desde o último quadro
+function fakeInput(keys = [], look = 0, lookY = 0) {
     const set = new Set(keys);
-    return { isDown: (k) => set.has(k), consumeLook: () => look };
+    return { isDown: (k) => set.has(k), consumeLook: () => ({ x: look, y: lookY }) };
 }
 
 function makePlayer(rotation = 0) {
@@ -59,7 +60,7 @@ test('Shift corre mais rápido', () => {
     assert.ok(Math.abs(p.x - (1500 + CONFIG.PLAYER.runSpeed)) < 1e-6);
 });
 
-test('arrastar o mouse (botão direito) gira a câmera, sem mover o jogador', () => {
+test('mover o mouse para a direita gira a câmera para a direita, sem mover o jogador', () => {
     const p = makePlayer(0);
     p.update(0.016, fakeInput([], 100), emptyWorld);
     assert.ok(Math.abs(p.rotation - 100 * CONFIG.PLAYER.mouseSensitivity) < 1e-9);
@@ -68,7 +69,41 @@ test('arrastar o mouse (botão direito) gira a câmera, sem mover o jogador', ()
 
     const q = makePlayer(0);
     q.update(0.016, fakeInput([], -50), emptyWorld);
-    assert.ok(q.rotation < 0, 'arrastar para a esquerda gira para a esquerda');
+    assert.ok(q.rotation < 0, 'mover para a esquerda gira para a esquerda');
+});
+
+test('mover o mouse para CIMA olha para cima e para BAIXO olha para baixo', () => {
+    const up = makePlayer(0);
+    up.update(0.016, fakeInput([], 0, -80), emptyWorld); // y negativo = mouse para cima
+    assert.ok(up.pitch > 0, 'deveria olhar para cima');
+    assert.ok(Math.abs(up.pitch - 80 * CONFIG.PLAYER.mouseSensitivity) < 1e-9);
+
+    const down = makePlayer(0);
+    down.update(0.016, fakeInput([], 0, 80), emptyWorld);
+    assert.ok(down.pitch < 0, 'deveria olhar para baixo');
+});
+
+test('o olhar vertical tem limite (não dá para virar de cabeça para baixo)', () => {
+    const p = makePlayer(0);
+    for (let i = 0; i < 50; i++) p.update(0.016, fakeInput([], 0, -2000), emptyWorld);
+    assert.equal(p.pitch, CONFIG.PLAYER.maxPitch);
+    for (let i = 0; i < 50; i++) p.update(0.016, fakeInput([], 0, 2000), emptyWorld);
+    assert.equal(p.pitch, -CONFIG.PLAYER.maxPitch);
+});
+
+test('olhar para cima/baixo não muda para onde o jogador anda (o movimento é no plano)', () => {
+    const flat = makePlayer(0);
+    flat.update(1, fakeInput(['w']), emptyWorld);
+    const tilted = makePlayer(0);
+    tilted.pitch = 0.4;
+    tilted.update(1, fakeInput(['w']), emptyWorld);
+    assert.ok(Math.abs(flat.x - tilted.x) < 1e-9 && Math.abs(flat.y - tilted.y) < 1e-9);
+});
+
+test('mexer a câmera na horizontal e na vertical ao mesmo tempo funciona', () => {
+    const p = makePlayer(0);
+    p.update(0.016, fakeInput([], 40, -40), emptyWorld);
+    assert.ok(p.rotation > 0 && p.pitch > 0);
 });
 
 test('A e D sozinhos nunca mudam a rotação', () => {

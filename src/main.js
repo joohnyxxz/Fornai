@@ -1,8 +1,5 @@
-import { CONFIG } from './config.js';
-import { createRng } from './rng.js';
-import { Zone } from './zone.js';
-import { generateWorld, findFreeSpot } from './world.js';
-import { Player } from './player.js';
+import { createMatch, updateMatch } from './match.js';
+import { PALETTE } from './world.js';
 import { createInput } from './input.js';
 import { Renderer, loadGround } from './render.js';
 import { drawMinimap, MINIMAP_SIZE } from './minimap.js';
@@ -10,7 +7,8 @@ import { createHud } from './hud.js';
 
 // Parâmetros de teste pela URL (ex.: index.html?ts=8&imortal)
 //   ts=N    -> acelera o tempo da zona N vezes
-//   imortal -> a tempestade não causa dano
+//   imortal -> o jogador não leva dano (nem de tinta nem da tempestade)
+//   debug   -> expõe a partida em window.__fornai
 const params = new URLSearchParams(window.location.search);
 const TIME_SCALE = Math.max(0.1, Number(params.get('ts')) || 1);
 const IMMORTAL = params.has('imortal');
@@ -28,18 +26,20 @@ const minimapCtx = minimapCanvas.getContext('2d');
 minimapCanvas.width = MINIMAP_SIZE;
 minimapCanvas.height = MINIMAP_SIZE;
 
+const pauseOverlay = document.getElementById('pause-overlay');
 const howToPlayModal = document.getElementById('how-to-play-modal');
 const settingsModal = document.getElementById('settings-modal');
 
-const input = createInput();
+const input = createInput(window, canvas); // o canvas é o elemento que prende o mouse
 const hud = createHud();
 let renderer = null; // criado depois que as imagens carregam (ver final do arquivo)
 
 let state = 'MENU'; // MENU | PLAYING | GAMEOVER
-let game = null; // { world, zone, player }
+let match = null;
 let lastTime = 0;
-let elapsed = 0;
 let frameId = null;
+let hasLocked = false; // o mouse já foi preso nesta partida?
+let paused = false; // o jogador apertou Esc (cursor solto): a partida espera
 
 function showScreen(name) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
@@ -49,18 +49,14 @@ function showScreen(name) {
 }
 
 function startGame() {
-    const seed = (Math.random() * 2 ** 32) >>> 0;
-    const rng = createRng(seed);
-    const world = generateWorld(rng, CONFIG.MAP_SIZE, CONFIG.WORLD, CONFIG.WORLD.minGap, CONFIG.WORLD.margin);
-    const zone = new Zone(CONFIG.ZONE, CONFIG.MAP_SIZE, rng);
-    const spot = findFreeSpot(rng, world, CONFIG.PLAYER.radius);
-    const player = new Player(spot.x, spot.y);
-
-    game = { world, zone, player };
-    if (params.has('debug')) window.__fornai = game; // só para testes manuais
+    match = createMatch();
+    if (params.has('debug')) window.__fornai = match; // só para testes manuais
     input.reset();
+    hasLocked = false;
+    setPaused(false);
+    input.requestLock(); // este clique do jogador permite prender o mouse
     state = 'PLAYING';
-    elapsed = 0;
+    gameOverScreen.classList.remove('victory', 'defeat');
     renderer.resize(window.innerWidth, window.innerHeight);
     showScreen('game');
 
@@ -69,36 +65,79 @@ function startGame() {
     frameId = requestAnimationFrame(loop);
 }
 
+function colorName(hex) {
+    const found = PALETTE.find((p) => p.base === hex);
+    return found ? found.name : 'desconhecida';
+}
+
+/** Pausa (cursor solto) ou retoma (mouse preso) a partida. */
+function setPaused(value) {
+    paused = value;
+    pauseOverlay.classList.toggle('show', value);
+    if (!value) input.reset(); // teclas que ficaram "apertadas" durante a pausa
+}
+
+// Esc solta o cursor: pausa. Clicar de volta prende o mouse e continua.
+document.addEventListener('pointerlockchange', () => {
+    if (input.isLocked()) {
+        hasLocked = true;
+        setPaused(false);
+    } else if (hasLocked && state === 'PLAYING') {
+        setPaused(true);
+    }
+});
+// Se o navegador não deixar prender o mouse, o jogo segue sem pausar (e o botão direito gira a câmera)
+document.addEventListener('pointerlockerror', () => {
+    hasLocked = false;
+});
+canvas.addEventListener('click', () => {
+    if (state === 'PLAYING' && !input.isLocked()) input.requestLock();
+});
+pauseOverlay.addEventListener('click', () => input.requestLock());
+
 function endGame() {
     state = 'GAMEOVER';
     cancelAnimationFrame(frameId);
+    hasLocked = false;
+    setPaused(false);
+    input.releaseLock(); // devolve o cursor para clicar nos botões
     gameScreen.classList.remove('in-storm');
-    gameOverScreen.classList.add('defeat');
-    gameOverTitle.textContent = 'Eliminado!';
-    gameOverSubtitle.textContent = 'A tempestade te pegou. Fique dentro da zona segura.';
+    const { result, kills } = match;
+    const plural = kills === 1 ? 'eliminação' : 'eliminações';
+
+    if (result.victory) {
+        gameOverScreen.classList.add('victory');
+        gameOverTitle.textContent = 'Vitória!';
+        gameOverSubtitle.textContent = `Último de pé, com ${kills} ${plural}.`;
+    } else {
+        gameOverScreen.classList.add('defeat');
+        gameOverTitle.textContent = 'Eliminado!';
+        if (result.reason === 'storm') {
+            gameOverSubtitle.textContent = 'A tempestade te pegou. Fique dentro da zona segura.';
+        } else {
+            const who = result.killer && result.killer.color ? `pelo jogador ${colorName(result.killer.color)}` : 'por um adversário';
+            gameOverSubtitle.textContent = `Você foi marcado por ${who}. Eliminações: ${kills}.`;
+        }
+    }
     showScreen('gameover');
 }
 
 function loop(now) {
     const dt = Math.min(0.05, (now - lastTime) / 1000);
     lastTime = now;
-    elapsed += dt;
 
-    const { world, zone, player } = game;
+    if (!paused) updateMatch(match, dt, input, { immortal: IMMORTAL, timeScale: TIME_SCALE });
 
-    player.update(dt, input, world);
-    zone.update(dt * TIME_SCALE);
+    renderer.render({
+        player: match.player, zone: match.zone, world: match.world, time: match.time,
+        bots: match.bots, balls: match.balls, decals: match.decals,
+    });
+    drawMinimap(minimapCtx, { player: match.player, zone: match.zone, world: match.world });
+    hud.update(match);
 
-    if (!IMMORTAL && zone.isOutside(player.x, player.y)) {
-        player.takeDamage(zone.damagePerSecond * dt);
-    }
-
-    renderer.render({ player, zone, world, time: elapsed });
-    drawMinimap(minimapCtx, { player, zone, world });
-    hud.update(player, zone);
-
-    if (!player.isAlive()) {
-        endGame();
+    if (match.state === 'over') {
+        // deixa a tela de fim aparecer um instante depois (dá para ver o último tiro)
+        setTimeout(endGame, 700);
         return;
     }
     frameId = requestAnimationFrame(loop);

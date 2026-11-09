@@ -26,6 +26,13 @@
     <div id="game-screen" class="screen">
         <canvas id="game-canvas"></canvas>
         <div id="storm-vignette" aria-hidden="true"></div>
+        <div id="damage-flash" aria-hidden="true"></div>
+        <div id="crosshair" aria-hidden="true"><span id="hitmarker"></span></div>
+        <div id="countdown" aria-live="assertive"></div>
+        <div id="pause-overlay" role="dialog" aria-label="Jogo pausado">
+            <h2>Pausado</h2>
+            <p>Clique para voltar ao jogo</p>
+        </div>
 
         <div id="hud">
             <div id="health">
@@ -34,6 +41,10 @@
                     <div id="health-bar" data-level="high"></div>
                     <span id="health-text">100/100</span>
                 </div>
+            </div>
+            <div id="stats">
+                <div class="hud-box"><span class="hud-label">VIVOS</span><span id="alive-count">20</span></div>
+                <div class="hud-box"><span class="hud-label">ELIM.</span><span id="kills-count">0</span></div>
             </div>
         </div>
 
@@ -71,8 +82,11 @@
             <h2>Como Jogar</h2>
             <p><strong>W / S:</strong> andar para frente e para trás.</p>
             <p><strong>A / D:</strong> andar para a esquerda e para a direita.</p>
-            <p><strong>Botão direito do mouse (segurar e arrastar):</strong> girar a câmera.</p>
+            <p><strong>Mouse:</strong> o cursor fica preso na tela e qualquer movimento gira a câmera, na horizontal e na vertical.</p>
+            <p><strong>Botão esquerdo do mouse (segurar):</strong> atirar bolinhas de tinta.</p>
+            <p><strong>Esc:</strong> solta o cursor e pausa o jogo; clique para continuar.</p>
             <p><strong>Shift:</strong> correr.</p>
+            <p>São 20 jogadores e só um fica de pé. Cada acerto tira 20 de vida; use bunkers e painéis como cobertura, porque as paredes bloqueiam os tiros.</p>
             <p>Fique dentro da zona segura! A tempestade roxa fecha em fases e machuca quem está fora.</p>
         </div>
     </div>

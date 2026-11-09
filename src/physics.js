@@ -133,6 +133,39 @@ export function raycast(world, ox, oy, angle, maxDist = Infinity) {
     return best;
 }
 
+/**
+ * Em que distância (de 0 a `len`) o segmento que sai de (ox, oy) na direção unitária (dx, dy)
+ * toca o círculo? Devolve `null` se não tocar; 0 se já começar dentro.
+ */
+export function rayCircle(ox, oy, dx, dy, len, cx, cy, r) {
+    const ocx = ox - cx;
+    const ocy = oy - cy;
+    const c = ocx * ocx + ocy * ocy - r * r;
+    if (c <= 0) return 0;
+    const b = ocx * dx + ocy * dy;
+    const disc = b * b - c;
+    if (disc < 0) return null;
+    const t = -b - Math.sqrt(disc);
+    return t >= 0 && t <= len ? t : null;
+}
+
+/**
+ * Trecho [entra, sai] (distâncias de 0 a `len`) em que o segmento que sai de (ox, oy) na direção
+ * unitária (dx, dy) está DENTRO do círculo. Devolve `null` se nunca entra.
+ */
+export function rayCircleSpan(ox, oy, dx, dy, len, cx, cy, r) {
+    const ocx = ox - cx;
+    const ocy = oy - cy;
+    const b = ocx * dx + ocy * dy;
+    const disc = b * b - (ocx * ocx + ocy * ocy - r * r);
+    if (disc < 0) return null;
+    const root = Math.sqrt(disc);
+    const enter = -b - root;
+    const exit = -b + root;
+    if (exit < 0 || enter > len) return null;
+    return [Math.max(0, enter), Math.min(len, exit)];
+}
+
 /** Há linha de visão livre entre os dois pontos (nenhuma parede no meio)? */
 export function lineOfSight(world, ax, ay, bx, by) {
     const dist = Math.hypot(bx - ax, by - ay);

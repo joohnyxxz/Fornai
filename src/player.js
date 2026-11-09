@@ -3,16 +3,28 @@ import { moveCircle } from './physics.js';
 
 export class Player {
     constructor(x, y) {
+        this.kind = 'player';
+        this.id = 'player';
         this.x = x;
         this.y = y;
         this.rotation = Math.random() * Math.PI * 2;
-        this.radius = CONFIG.PLAYER.radius;
+        this.pitch = 0; // olhar para cima (+) ou para baixo (-); só afeta o desenho, o combate é no plano
+        this.radius = CONFIG.COMBAT.entityRadius;
         this.maxHealth = CONFIG.PLAYER.maxHealth;
         this.health = this.maxHealth;
+        this.color = '#ffd60a';
+
+        this.fireTimer = 0; // tempo até poder atirar de novo
+        this.shootTimer = 0; // clarão do tiro (efeito visual)
+        this.hitTimer = 0; // tempo desde que levou tinta (efeito visual)
+    }
+
+    get alive() {
+        return this.health > 0;
     }
 
     isAlive() {
-        return this.health > 0;
+        return this.alive;
     }
 
     takeDamage(amount) {
@@ -20,9 +32,25 @@ export class Player {
     }
 
     /**
+     * Câmera: o mouse preso na tela gira na horizontal (rotation) e na vertical (pitch).
+     * As setas ←/→ também giram na horizontal.
+     */
+    look(input, dt) {
+        const cfg = CONFIG.PLAYER;
+        const look = input.consumeLook ? input.consumeLook() : null;
+        if (look) {
+            this.rotation += look.x * cfg.mouseSensitivity;
+            // mouse para cima (y negativo) = olhar para cima
+            this.pitch = Math.max(-cfg.maxPitch, Math.min(cfg.maxPitch, this.pitch - look.y * cfg.mouseSensitivity));
+        }
+        if (input.isDown('arrowleft')) this.rotation -= cfg.turnSpeed * dt;
+        if (input.isDown('arrowright')) this.rotation += cfg.turnSpeed * dt;
+    }
+
+    /**
      * Controles:
      *  W/S (ou ↑/↓): frente e trás      A/D: esquerda e direita (andar de lado)
-     *  botão direito do mouse + arrastar: gira a câmera      ←/→: também giram a câmera
+     *  mouse (preso na tela): gira a câmera na horizontal e na vertical      ←/→: giram na horizontal
      *  Shift: correr
      *
      * @param {number} dt segundos
@@ -32,10 +60,10 @@ export class Player {
     update(dt, input, world) {
         const cfg = CONFIG.PLAYER;
 
-        // Câmera
-        if (input.consumeLook) this.rotation += input.consumeLook() * cfg.mouseSensitivity;
-        if (input.isDown('arrowleft')) this.rotation -= cfg.turnSpeed * dt;
-        if (input.isDown('arrowright')) this.rotation += cfg.turnSpeed * dt;
+        this.look(input, dt);
+        this.fireTimer = Math.max(0, this.fireTimer - dt);
+        this.shootTimer = Math.max(0, this.shootTimer - dt);
+        this.hitTimer = Math.max(0, this.hitTimer - dt);
 
         // Movimento relativo ao lado para onde a câmera olha
         let forward = 0;
