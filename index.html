@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fornai</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,700;1,800;1,900&family=Lilita+One&display=swap" rel="stylesheet">
     <link rel="icon" href="logofornai.png" type="image/png">
 </head>
 <body>
@@ -23,36 +25,43 @@
 
     <div id="game-screen" class="screen">
         <canvas id="game-canvas"></canvas>
+        <div id="storm-vignette" aria-hidden="true"></div>
 
         <div id="hud">
             <div id="health">
-                <span id="health-text">1000/1000</span>
+                <span class="hud-label">VIDA</span>
                 <div id="health-bar-container">
-                    <div id="health-bar"></div>
+                    <div id="health-bar" data-level="high"></div>
+                    <span id="health-text">100/100</span>
                 </div>
             </div>
         </div>
 
         <div id="top-right-hud">
             <div class="hud-box">
-                <span id="zone-timer">02:00</span>
+                <span id="zone-label" class="hud-label">ZONA FECHA EM</span>
+                <span id="zone-timer">00:45</span>
             </div>
             <div class="hud-box">
-                Jogadores: <span id="players-left">100</span>
+                <span class="hud-label">FASE</span>
+                <span id="zone-phase">1/5</span>
+            </div>
+            <div class="hud-box">
+                <span class="hud-label">SAFE</span>
+                <svg id="zone-arrow" viewBox="0 0 24 24" width="26" height="26" role="img" aria-label="Direção da zona segura">
+                    <path d="M12 2 L21 20 L12 15 L3 20 Z" fill="#ffd60a" stroke="#0b1b3f" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
             </div>
         </div>
 
         <div id="minimap-container">
             <canvas id="minimap-canvas"></canvas>
         </div>
-
-        <div id="drop-phase-overlay" class="active">
-            Pressione ESPAÇO para Pousar!
-        </div>
     </div>
 
     <div id="game-over-screen" class="screen">
         <h2 id="game-over-title"></h2>
+        <p id="game-over-subtitle"></p>
         <button id="restart-button">Voltar ao Menu</button>
     </div>
 
@@ -60,9 +69,11 @@
         <div class="modal-content">
             <span class="close-button">&times;</span>
             <h2>Como Jogar</h2>
-            <p><strong>WASD / Setas:</strong> Mover e girar a câmera.</p>
-            <p><strong>Clique do mouse:</strong> Atirar.</p>
-            <p>Sobreviva a todos os inimigos e evite a zona segura que encolhe!</p>
+            <p><strong>W / S:</strong> andar para frente e para trás.</p>
+            <p><strong>A / D:</strong> andar para a esquerda e para a direita.</p>
+            <p><strong>Botão direito do mouse (segurar e arrastar):</strong> girar a câmera.</p>
+            <p><strong>Shift:</strong> correr.</p>
+            <p>Fique dentro da zona segura! A tempestade roxa fecha em fases e machuca quem está fora.</p>
         </div>
     </div>
 
@@ -74,6 +85,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="src/main.js"></script>
 </body>
 </html>
