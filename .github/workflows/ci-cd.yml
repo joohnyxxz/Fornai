@@ -1,0 +1,41 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI - Validação
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validar sintaxe do JavaScript
+        run: node --check script.js
+      - name: Validar HTML
+        run: npx --yes htmlhint@1 index.html
+      - name: Conferir arquivos referenciados no index.html
+        run: |
+          for f in style.css script.js logofornai.png; do
+            test -f "$f" || { echo "Faltando: $f"; exit 1; }
+          done
+
+  deploy:
+    name: CD - Deploy no Render
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acionar Deploy Hook do Render
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK_URL"
