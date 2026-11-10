@@ -4,6 +4,11 @@ import { CONFIG } from './config.js';
 import { PALETTE, TEXTURE_VARIANTS } from './world.js';
 import { raycast } from './physics.js';
 import { createRng } from './rng.js';
+import { angleDiff } from './util.js';
+import {
+    buildAllSheets, buildWeaponSprite, FRAME_W, FRAME_H, GROUND_Y, POSES,
+    WEAPON_W, WEAPON_H, WEAPON_TIP, WEAPON_ANGLE,
+} from './sprites.js';
 
 // Paleta "dia ensolarado" (estética dos primeiros capítulos)
 const SKY_TOP = [38, 142, 255];
@@ -212,6 +217,12 @@ export class Renderer {
         this.ctx = canvas.getContext('2d');
         this.ground = ground;
         this.textures = buildBunkerTextures();
+        this.sheets = buildAllSheets(); // personagens de cada cor
+        this.weapon = buildWeaponSprite(); // a arma do jogador, no canto da tela
+        this.wp = { bob: 0, swayX: 0, swayY: 0, lastX: 0, lastY: 0, lastRot: 0, lastPitch: 0 };
+        this.scratch = document.createElement('canvas'); // folha temporária para tingir um personagem
+        this.scratch.width = FRAME_W;
+        this.scratch.height = FRAME_H;
         this.floorCanvas = document.createElement('canvas');
         this.floorCtx = this.floorCanvas.getContext('2d');
         this.wallZ = [];
@@ -231,33 +242,44 @@ export class Renderer {
         this.canvas.height = height;
         this.w = width;
         this.h = height;
-        this.horizon = Math.round(height / 2);
         this.f = (width / 2) / Math.tan(CONFIG.FOV / 2);
+        // Olhar para cima/baixo move o horizonte (o "deslocamento" nunca passa de 42% da altura)
+        this.maxShift = Math.round(height * 0.42);
+        this.horizon = Math.round(height / 2);
 
         // O chão é calculado em resolução reduzida (mais rápido) e depois esticado
         // (1 pixel por pixel até ~1000px de largura; 2x em telas maiores)
         this.floorScale = Math.max(1, Math.ceil(width / 1000));
         this.floorW = Math.ceil(width / this.floorScale);
+        // o buffer cabe o chão mais alto possível (horizonte no ponto mais alto); a cada quadro usa-se só a parte necessária
+        this.floorMaxH = Math.ceil((height / 2 + this.maxShift) / this.floorScale);
         this.floorH = Math.ceil((height - this.horizon) / this.floorScale);
         this.floorCanvas.width = this.floorW;
-        this.floorCanvas.height = this.floorH;
-        this.floorImage = this.floorCtx.createImageData(this.floorW, this.floorH);
+        this.floorCanvas.height = this.floorMaxH;
+        this.floorImage = this.floorCtx.createImageData(this.floorW, this.floorMaxH);
         this.cols = Math.ceil(width / WALL_STEP);
         this.wallZ = new Array(this.cols).fill(Infinity); // profundidade da parede da tempestade
         this.depth = new Float32Array(this.cols).fill(Infinity); // profundidade das paredes do campo
         this.wallTop = new Float32Array(this.cols).fill(0); // altura (px) do topo da parede do campo
     }
 
-    render({ player, zone, world, time }) {
+    render({ player, zone, world, time, bots = [], balls = [], decals = [] }) {
         const { ctx } = this;
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
+
+        // Inclinação vertical da câmera: desloca o horizonte (técnica clássica de "y-shearing")
+        const shift = Math.max(-this.maxShift, Math.min(this.maxShift, this.f * Math.tan(player.pitch || 0)));
+        this.horizon = Math.round(this.h / 2 + shift);
+        this.floorH = Math.max(1, Math.ceil((this.h - this.horizon) / this.floorScale));
 
         this._drawSky(player, time);
         this._drawFloor(player, zone, time);
         this._drawObstacles(player, world);
         this._computeWall(player, zone);
         this._drawWall(time);
+        this._drawEntities(player, { bots, balls, decals });
+        if (player.alive !== false) this._drawWeapon(player, time);
     }
 
     // ----- céu -----
@@ -402,7 +424,7 @@ export class Renderer {
             }
         }
 
-        this.floorCtx.putImageData(this.floorImage, 0, 0);
+        this.floorCtx.putImageData(this.floorImage, 0, 0, 0, 0, floorW, floorH);
         this.ctx.drawImage(
             this.floorCanvas, 0, 0, floorW, floorH,
             0, this.horizon, floorW * scale, floorH * scale
@@ -527,6 +549,244 @@ export class Renderer {
                 ctx.fillStyle = `rgba(${FOG[0]}, ${FOG[1]}, ${FOG[2]}, ${fog})`;
                 ctx.fillRect(x, top, WALL_STEP, height);
             }
+        }
+    }
+
+    // ----- jogadores, bolinhas de tinta e respingos (desenhados por distância, de longe para perto) -----
+    _drawEntities(player, { bots, balls, decals }) {
+        const { f, w, horizon } = this;
+        const cosR = Math.cos(player.rotation);
+        const sinR = Math.sin(player.rotation);
+        const camF = CONFIG.CAMERA_HEIGHT * f;
+        const maxZ = CONFIG.FOG_DISTANCE * 1.25;
+        const list = [];
+
+        const project = (x, y) => {
+            const dx = x - player.x;
+            const dy = y - player.y;
+            const z = dx * cosR + dy * sinR;
+            if (z < 8 || z > maxZ) return null;
+            return { z, sx: w / 2 + ((-dx * sinR + dy * cosR) / z) * f };
+        };
+
+        for (const b of bots) {
+            if (!b.alive && b.deadTimer > CONFIG.MATCH.deadLinger) continue;
+            const p = project(b.x, b.y);
+            if (p) list.push({ kind: 'bot', ref: b, ...p });
+        }
+        for (const ball of balls) {
+            const p = project(ball.x, ball.y);
+            if (p) list.push({ kind: 'ball', ref: ball, ...p });
+        }
+        for (const d of decals) {
+            const p = project(d.x, d.y);
+            if (p) list.push({ kind: 'decal', ref: d, ...p });
+        }
+        list.sort((a, b) => b.z - a.z);
+
+        for (const item of list) {
+            const fog = Math.min(1, Math.pow(item.z / CONFIG.FOG_DISTANCE, 1.6)) * 0.97;
+            if (item.kind === 'bot') this._drawBot(player, item, fog, camF, horizon);
+            else if (item.kind === 'ball') this._drawBall(item, fog, camF, horizon);
+            else this._drawDecal(item, fog, camF, horizon);
+        }
+    }
+
+    /** A coluna `col` da tela está livre (sem parede do campo na frente) para algo a distância z? */
+    _columnOpen(col, z, tolerance = 0) {
+        const c = Math.max(0, Math.min(this.cols - 1, col));
+        return this.depth[c] >= z - tolerance;
+    }
+
+    _drawBot(player, item, fog, camF, horizon) {
+        const { ctx, f } = this;
+        const bot = item.ref;
+        const sheet = this.sheets.get(bot.color);
+        if (!sheet) return;
+
+        const z = item.z;
+        const hPx = (CONFIG.COMBAT.entityHeight * f) / z;
+        const wPx = hPx * (FRAME_W / FRAME_H);
+        const x = item.sx - wPx / 2;
+        const bottom = horizon + camF / z;
+        const y = bottom - hPx * (GROUND_Y / FRAME_H);
+        if (x + wPx < 0 || x > this.w) return;
+
+        // qual pose e qual lado (frente ou costas) a câmera enxerga
+        let pose = 'idle';
+        if (!bot.alive) pose = 'dead';
+        else if (bot.hitTimer > 0) pose = 'hit';
+        else if (bot.shootTimer > 0) pose = 'shoot';
+        else if (bot.moving) pose = Math.floor(bot.walkPhase) % 2 === 0 ? 'walkA' : 'walkB';
+        const toCamera = Math.atan2(player.y - bot.y, player.x - bot.x);
+        const facingCamera = Math.cos(angleDiff(bot.rotation, toCamera)) >= -0.15;
+        const view = facingCamera || !bot.alive ? 0 : 1;
+        const col = POSES.indexOf(pose);
+
+        // sombra no chão
+        if (this._columnOpen(Math.floor(item.sx / WALL_STEP), z)) {
+            ctx.fillStyle = `rgba(8, 24, 4, ${0.4 * (1 - fog)})`;
+            ctx.beginPath();
+            ctx.ellipse(item.sx, bottom, wPx * 0.38, Math.max(2, hPx * 0.045), 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // quadro numa folha temporária, já com neblina e clarão vermelho de "levou tinta"
+        const s = this.scratch;
+        const sc = s.getContext('2d');
+        sc.globalCompositeOperation = 'source-over';
+        sc.clearRect(0, 0, FRAME_W, FRAME_H);
+        sc.drawImage(sheet, col * FRAME_W, view * FRAME_H, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+        sc.globalCompositeOperation = 'source-atop';
+        if (bot.hitTimer > 0) {
+            sc.fillStyle = `rgba(255, 40, 70, ${0.55 * (bot.hitTimer / 0.28)})`;
+            sc.fillRect(0, 0, FRAME_W, FRAME_H);
+        }
+        if (fog > 0.02) {
+            sc.fillStyle = `rgba(${FOG[0]}, ${FOG[1]}, ${FOG[2]}, ${fog})`;
+            sc.fillRect(0, 0, FRAME_W, FRAME_H);
+        }
+        sc.globalCompositeOperation = 'source-over';
+
+        // eliminado some devagar
+        const fade = bot.alive ? 1 : Math.min(1, (CONFIG.MATCH.deadLinger - bot.deadTimer) / 0.5);
+        ctx.globalAlpha = Math.max(0, fade);
+
+        // desenha só as colunas que não estão atrás de uma parede
+        const c0 = Math.max(0, Math.floor(x / WALL_STEP));
+        const c1 = Math.min(this.cols - 1, Math.floor((x + wPx) / WALL_STEP));
+        let runStart = -1;
+        for (let c = c0; c <= c1 + 1; c++) {
+            const open = c <= c1 && this.depth[c] >= z;
+            if (open && runStart < 0) runStart = c;
+            if (!open && runStart >= 0) {
+                const dx0 = Math.max(x, runStart * WALL_STEP);
+                const dx1 = Math.min(x + wPx, c * WALL_STEP);
+                if (dx1 > dx0) {
+                    const sx0 = ((dx0 - x) / wPx) * FRAME_W;
+                    const sx1 = ((dx1 - x) / wPx) * FRAME_W;
+                    ctx.drawImage(s, sx0, 0, sx1 - sx0, FRAME_H, dx0, y, dx1 - dx0, hPx);
+                }
+                runStart = -1;
+            }
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    _drawBall(item, fog, camF, horizon) {
+        const { ctx, f } = this;
+        if (!this._columnOpen(Math.floor(item.sx / WALL_STEP), item.z)) return;
+        const ball = item.ref;
+        const y = horizon + ((CONFIG.CAMERA_HEIGHT - ball.z) * f) / item.z; // na altura em que a bolinha está
+        const r = Math.max(2, (3.2 * f) / item.z);
+        ctx.globalAlpha = 1 - fog;
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.arc(item.sx + r * 0.25, y + r * 0.3, r * 1.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = ball.color;
+        ctx.beginPath();
+        ctx.arc(item.sx, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = Math.max(1, r * 0.25);
+        ctx.strokeStyle = 'rgba(10, 20, 40, 0.75)';
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.beginPath();
+        ctx.arc(item.sx - r * 0.3, y - r * 0.3, r * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+
+    // respingo de tinta numa parede (mancha com gotas ao redor)
+    _drawDecal(item, fog, camF, horizon) {
+        const { ctx, f } = this;
+        const d = item.ref;
+        if (!this._columnOpen(Math.floor(item.sx / WALL_STEP), item.z, 8)) return;
+        const y = horizon + ((CONFIG.CAMERA_HEIGHT - d.h) * f) / item.z;
+        const r = (d.size * f) / item.z;
+        if (r < 0.8) return;
+        if (d.floor) {
+            // mancha no chão: vista de cima fica achatada pela perspectiva
+            ctx.globalAlpha = Math.min(1, d.life / 4) * (1 - fog) * 0.9;
+            const ry = Math.max(0.8, (d.size * 1.6 * camF) / (item.z * item.z));
+            ctx.fillStyle = d.color;
+            ctx.strokeStyle = 'rgba(10, 20, 40, 0.45)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(item.sx, y, r * 1.6, ry, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            return;
+        }
+        ctx.globalAlpha = Math.min(1, d.life / 4) * (1 - fog) * 0.95;
+        ctx.fillStyle = d.color;
+        ctx.strokeStyle = 'rgba(10, 20, 40, 0.5)';
+        ctx.lineWidth = Math.max(0.6, r * 0.14);
+        const seed = Math.floor(d.x * 7 + d.y * 13);
+        const blobs = [[0, 0, 1], [0.95, -0.35, 0.42], [-0.85, 0.4, 0.36], [0.15, 0.95, 0.3], [-0.25, -0.9, 0.26]];
+        blobs.forEach(([bx, by, br], i) => {
+            const k = 0.8 + (((seed >> i) & 3) / 3) * 0.4;
+            ctx.beginPath();
+            ctx.arc(item.sx + bx * r * k, y + by * r * k, br * r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    // ----- arma na tela (viewmodel): fica no canto direito, balança, recua e dá clarão ao atirar -----
+    _drawWeapon(player, time) {
+        const { ctx, f, w, h } = this;
+        const wp = this.wp;
+
+        // balanço ao andar (suavizado) e atraso ao girar a câmera
+        const walked = Math.hypot(player.x - wp.lastX, player.y - wp.lastY);
+        wp.bob += (Math.min(1, walked / 2.5) - wp.bob) * 0.15;
+        const dRot = angleDiff(player.rotation, wp.lastRot);
+        const dPitch = (player.pitch || 0) - wp.lastPitch;
+        wp.swayX += (Math.max(-45, Math.min(45, -dRot * f * 0.7)) - wp.swayX) * 0.25;
+        wp.swayY += (Math.max(-45, Math.min(45, dPitch * f * 0.7)) - wp.swayY) * 0.25;
+        wp.lastX = player.x;
+        wp.lastY = player.y;
+        wp.lastRot = player.rotation;
+        wp.lastPitch = player.pitch || 0;
+
+        // a boca do cano fica onde a tinta nasce: um pouco à frente, à direita e abaixo da câmera
+        const cfg = CONFIG.COMBAT;
+        const sc = h * 0.0016;
+        const tipX = w / 2 + (f * cfg.muzzleRight) / cfg.muzzleForward;
+        const tipY = h / 2 + (f * cfg.muzzleDrop) / cfg.muzzleForward;
+
+        const recoil = Math.max(0, player.shootTimer) / 0.15; // 1 no tiro, vai a 0
+        const axis = { x: Math.cos(WEAPON_ANGLE), y: Math.sin(WEAPON_ANGLE) };
+        const kick = recoil * 22 * sc;
+        const bobX = Math.cos(time * 5) * 5 * sc * wp.bob;
+        const bobY = Math.abs(Math.sin(time * 5)) * 7 * sc * wp.bob;
+
+        const x = tipX - WEAPON_TIP.x * sc + wp.swayX + bobX + axis.x * kick;
+        const y = tipY - WEAPON_TIP.y * sc + wp.swayY + bobY + axis.y * kick;
+        ctx.drawImage(this.weapon, x, y, WEAPON_W * sc, WEAPON_H * sc);
+
+        // clarão e respingo na boca do cano
+        if (recoil > 0.45) {
+            const fx = tipX + wp.swayX + bobX + axis.x * kick;
+            const fy = tipY + wp.swayY + bobY + axis.y * kick;
+            const r = 46 * sc * recoil;
+            const g = ctx.createRadialGradient(fx, fy, 2, fx, fy, r);
+            g.addColorStop(0, 'rgba(255,255,255,1)');
+            g.addColorStop(0.4, 'rgba(255,225,90,0.95)');
+            g.addColorStop(1, 'rgba(255,150,30,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            for (let i = 0; i < 14; i++) {
+                const a = (i / 14) * Math.PI * 2;
+                const rr = i % 2 === 0 ? r : r * 0.45;
+                ctx.lineTo(fx + Math.cos(a) * rr, fy + Math.sin(a) * rr);
+            }
+            ctx.closePath();
+            ctx.fill();
         }
     }
 }
